@@ -3,15 +3,15 @@
 ## Guidelines
 This document provides guidelines and examples for GoCardless APIs, encouraging consistency, maintainability, and best practices.
 
-Sources:
-https://github.com/interagent/http-api-design
-https://www.gov.uk/service-manual/making-software/apis.html
-http://www.mnot.net/blog/
-http://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api
-https://github.com/WhiteHouse/api-standards
-http://apigee.com/about/content/api-fa%C3%A7ade-pattern
-https://pages.apigee.com/web-api-design-ebook.html
-https://groups.google.com/forum/#!forum/api-craft
+### Sources:
+- https://github.com/interagent/http-api-design
+- https://www.gov.uk/service-manual/making-software/apis.html
+- http://www.mnot.net/blog/
+- http://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api
+- https://github.com/WhiteHouse/api-standards
+- http://apigee.com/about/content/api-fa%C3%A7ade-pattern
+- https://pages.apigee.com/web-api-design-ebook.html
+- https://groups.google.com/forum/#!forum/api-craft
 
 ## JSON API
 All endpoints must follow the core JSON API spec: http://jsonapi.org/format/
@@ -36,6 +36,7 @@ GET /posts/1
 
 ## JSON Schema
 Provide a JSON Schema that describes what resources are available via the API, what their URLs are, how they are represented and what operations they support.
+
 Example intended uses for the schema include:
 - Auto-creating client libraries for your favorite programming language
 - Generating up-to-date reference docs
@@ -43,17 +44,18 @@ Example intended uses for the schema include:
 
 `GET https://api.gocardless.com/schema`
 
-Sources:
+### Sources:
 http://json-schema.org/examples.html
 http://tools.ietf.org/html/draft-zyp-json-schema-04
 
 ## JSON only
 The API should only support JSON. Provide API clients to work with the response.
 
-Sources:
+### Sources:
 http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
 
 ## RESTful URLs
+
 ### General guidelines for RESTful URLs
 - A URL identifies a resource.
 - URLs should include nouns, not verbs.
@@ -89,32 +91,35 @@ http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
 
 ### Bad URL examples
 - Non-plural noun:
-  - https://api.gocardless.com/v1/payment
-  - https://api.gocardless.com/v1/payment/123
-  - https://api.gocardless.com/v1/payment/action
+  - https://api.gocardless.com/payment
+  - https://api.gocardless.com/payment/123
+  - https://api.gocardless.com/payment/action
 - Verb in URL:
-  - https://api.gocardless.com/v1/payment/create
+  - https://api.gocardless.com/payment/create
 - Nested resources:
-  - https://api.gocardless.com/v1/subscriptions/1234/amendments
+  - https://api.gocardless.com/subscriptions/1234/amendments
 - Filter outside of query string
-  - https://api.gocardless.com/v1/payments/desc
+  - https://api.gocardless.com/payments/desc
 
 ## HTTP Verbs
 HTTP verbs, or methods, should be used in compliance with their definitions under the HTTP/1.1 standard. The action taken on the representation will be contextual to the media type being worked on and its current state. Here's an example of how HTTP verbs map to create, read, update, delete operations in a particular context:
 
-### TABLE
-HTTP METHOD POST  GET PUT PATCH DELETE
-CRUD OP CREATE  READ  UPDATE  UPDATE  DELETE
-/plans  Create new plan List plans  Bulk update Error Delete all plans
-/plans/1234 Error Show Plan If exists, replace Plan; If not, error  If exists, update Plan; If not, error Delete Plan
+| HTTP METHOD   | POST           | GET          | PUT          | PATCH        | DELETE       |
+|:------------- |:-------------- |:------------ |:------------ |:------------ |:------------ |
+| CRUD OP       | CREATE         | READ         | UPDATE       | UPDATE       | DELETE       |
+| /plans        | Create new plan| List plans   | Bulk update  | Error        | Delete all plans |
+| /plans/1234   | Error          | Show Plan If exists | If exists, replace Plan; If not, error | If exists, update Plan; If not, error | Delete Plan |
 
 ## Actions
+
 Avoid resource actions. Create separate resources where possible:
-- Bad:
+
+### Bad:
 ```
 POST /payments/ID/refund
 ```
-- Good:
+
+### Good:
 ```
 POST /refunds?payment=ID&amount=1000
 ```
@@ -204,38 +209,34 @@ Nested errors MAY implement `field`.
 ### Error types
 
 ## TABLE
-Error Type  Error Description
-not_found This means a resource does not exist.
-deprecated  Resource has been deprecated. Please see API release notes
-validation_failed Resource validation failed.
-validation_failed[missing_field]  This means a required field on a resource has not been set.
-validation_failed[invalid_field]  This means the formatting of a field is invalid. The documentation for that resource should be able to give you more specific information.
-validation_failed[already_exists] An existing resource already has this associated resource.
-validation_failed[deprecated_field] Field has been deprecated in, please see API release notes.
-validation_failed[not_found]  Related resource was not found
-amount_limit_exceeded Mandate amount limit exceeded.
-cancellation_failed A cancellation is not possible due to the current payment state.
-retry_failed  A retry is not possible due to the current payment state.
-refund_failed A refund is not possible due to the current payment state.
-chargeback_failed A chargeback is not possible due to the current payment state.
-delete_failed The resource can't be hidden/deleted because of a constraint (e.g. default accounts can't be deleted)
-api_maintenance API down for scheduled maintenance
-invalid_user_credentials  For temporary access tokens only.
-rate_limit_exceeded Rate limit
-temporary_access_token_expired  When using temporary access tokens
-api_temporarily_unavailable API is down
-invalid_format  Request body did not contain JSON
-invalid_character Request body contains malformed JSON
-too_large Request was too lare
-internal_server_error Internal GoCardless server exception
-api_key_not_active  API key is no longer active. You must re-issue a new one.
-missing_authorization_header  Authorization header missing from request.
-invalid_authorization_header  Authorization header has an invalid format. Should follow HTTP basic format: Authorization api_key_id:api_key_secret
-api_key_not_found The API key id was not found.
-missing_organisation  Organisation id was missing in resource links.
-insufficient_permissions
+
+| Error Type                         | Error                     |
+|:---------------------------------- |:------------------------- |
+| not_found      | This means a resource does not exist. |
+| deprecated      | Resource has been deprecated. Please see API release notes      |
+| validation_failed | Resource validation failed. |
+| validation_failed[missing_field] | This means a required field on a resource has not been set |
+| validation_failed[invalid_field] | This means the formatting of a field is invalid. The documentation for that resource should be able to give you more specific | information |
+| validation_failed[already_exists] | An existing resource already has this associated resource |
+| validation_failed[deprecated_field] | Field has been deprecated in, please see API release notes |
+| validation_failed[not_found] | Related resource was not found |
+
+| api_maintenance | API down for scheduled maintenance |
+| invalid_user_credentials | For temporary access tokens only |
+| rate_limit_exceeded | Rate limit |
+| api_temporarily_unavailable | API is down |
+| invalid_format | Request body did not contain JSON |
+| invalid_character | Request body contains malformed JSON |
+| too_large | Request was too lare |
+| internal_server_error | Internal GoCardless server exception |
+| api_key_not_active | API key is no longer active. You must re-issue a new one |
+| missing_authorization_header | Authorization header missing from request |
+| invalid_authorization_header | Authorization header has an invalid format. Should follow HTTP basic format: Authorization api_key_id:api_key_secret |
+| api_key_not_found | The API key id was not found |
+| insufficient_permissions | Permissions |
 
 ### HTTP Status Code Summary
+
 - 200 OK - Everything worked as expected.
 - 400 Bad Request - Eg. invalid JSON.
 - 401 Unauthorized - No valid API key provided.
@@ -245,6 +246,7 @@ insufficient_permissions
 - 500, 502, 503, 504 Server errors - something went wrong on GoCardless end.
 
 ## What changes are considered “backwards-compatible”?
+
 - Adding new API resources.
 - Adding new optional request parameters to existing API methods.
 - Adding new properties to existing API responses.
@@ -256,31 +258,26 @@ insufficient_permissions
 - Adding new event types. Your webhook listener should gracefully handle unfamiliar events types.
 
 ## Versioning changes
+
 The versioning scheme is designed to promote incremental improvement to the API and discourage rewrites.
 
 ### Format:
+
 Versions should be dated as ISO8601 (YYYY-MM-DD)
 - Good: 2014-05-04
 - Bad: v-1.1, v1.2, 1.3, v1, v2
 
 ### Version maintenance:
+
 Maintain old API versions for at least 6 months.
 
 ### Implementation guidelines
+
 When possible API versions should be tied to a set of API keys or the account in use.
 API keys should maintain a last used date and the API version. Automated reminders should be set up to remind users to update their API version.
 
-Optional header Format to specify version:
-```
-Accept: application/json; version=YYYY-MM-DD
-Vary: Accept
-```
-
-Make sure `Vary` has the `Accept` header, or caching won't be invalidated by new versions.
-
-See Caching.
-
 ## Pagination
+
 All list/index endpoints must be paginated by default.
 Pagination must be reverse chronological. To enable cursor based pagination, ids should be increasing.
 
@@ -294,11 +291,11 @@ Limits:
 
 Parameters:
 
-## TABLE
-Name  Type  Description
-after string  id to start after
-before  string  id to start before
-limit numeric maximum number of records
+| Name        | Type           | Description  |
+| ------------- |:-------------:| -----:|
+| `after`     | string | id to start after |
+| `before`      | string      |   id to start before |
+| `limit` | string      |   number of records |
 
 ### Response
 Paginated results are always enveloped:
