@@ -187,35 +187,6 @@ Nested errors MAY implement `field`.
 }
 ```
 
-### Error types
-
-## TABLE
-
-| Error Type                         | Error                     |
-|:---------------------------------- |:------------------------- |
-| not_found      | This means a resource does not exist. |
-| deprecated      | Resource has been deprecated. Please see API release notes      |
-| validation_failed | Resource validation failed. |
-| validation_failed[missing_field] | This means a required field on a resource has not been set |
-| validation_failed[invalid_field] | This means the formatting of a field is invalid. The documentation for that resource should be able to give you more specific | information |
-| validation_failed[already_exists] | An existing resource already has this associated resource |
-| validation_failed[deprecated_field] | Field has been deprecated in, please see API release notes |
-| validation_failed[not_found] | Related resource was not found |
-
-| api_maintenance | API down for scheduled maintenance |
-| invalid_user_credentials | For temporary access tokens only |
-| rate_limit_exceeded | Rate limit |
-| api_temporarily_unavailable | API is down |
-| invalid_format | Request body did not contain JSON |
-| invalid_character | Request body contains malformed JSON |
-| too_large | Request was too lare |
-| internal_server_error | Internal GoCardless server exception |
-| api_key_not_active | API key is no longer active. You must re-issue a new one |
-| missing_authorization_header | Authorization header missing from request |
-| invalid_authorization_header | Authorization header has an invalid format. Should follow HTTP basic format: Authorization api_key_id:api_key_secret |
-| api_key_not_found | The API key id was not found |
-| insufficient_permissions | Permissions |
-
 ### HTTP Status Code Summary
 
 - 200 OK - Everything worked as expected.
