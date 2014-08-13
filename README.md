@@ -34,20 +34,6 @@ GET /posts/1
 }
 ```
 
-## JSON Schema
-Provide a JSON Schema that describes what resources are available via the API, what their URLs are, how they are represented and what operations they support.
-
-Example intended uses for the schema include:
-- Auto-creating client libraries for your favorite programming language
-- Generating up-to-date reference docs
-- Writing automatic acceptance and integration tests
-
-`GET https://api.gocardless.com/schema`
-
-### Sources:
-http://json-schema.org/examples.html
-http://tools.ietf.org/html/draft-zyp-json-schema-04
-
 ## JSON only
 The API should only support JSON. Provide API clients to work with the response.
 
@@ -64,12 +50,7 @@ http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
 - Never nest resources - it enforces relationships that could change, and makes clients harder to write. More info available here.
 - E.g. use `/payments?subscription_id=xyz` rather than `/subscriptions/xyz/payments`
 - Formats should be in the form of `/resource/{id}`
-- Versions should be represented as dates documented in a changelog. Version number should not be in the url. Use Accept header for version:
-- `Accept: application/vnd.gocardless.com+json; version=YYYYMMDD`
-- `Vary: Accept`
-- URL v. header:
-- If it changes the resource returned, put it in the URL.
-- If it only changes the representation of the resource returned, like OAuth info, Accept headers and Language put it in the header.
+- Versions should be represented as dates documented in a changelog. Version number should not be in the url.
 - API should be behind a subdomain: `api.gocardless.com`
 
 ### Good URL examples
@@ -323,76 +304,6 @@ Only implement validation if it is strictly necessary. For example to support a 
 
 To implement validation, resources create endpoint should accept a `dry_run` parameter. A successful validation should return a `200 OK`.
 
-## Mock Responses
-It is suggested that each resource accept a `mock` parameter on the testing server. Passing this parameter should return a mock data response (bypassing the backend).
-
-Implementing this feature early in development ensures that the API will exhibit consistent behavior, supporting a test driven development methodology.
-Note: If the mock parameter is included in a request to the production environment, an error should be raised.
-
-Only support `mock` parameter in test environments.
-
-## Mock Errors
-To aid development it is recommended that each resource accepts a `raise_error_type` parameter on the testing server.
-
-Passing this parameter would result in the error supplied being returned in the response.
-
-Example:
-```
-GET /payments/pay_123?raise_error_type=invalid_request
-{
-  "message" :"Body should be a JSON Hash",
-  "type": "invalid_request",
-  "documentation_url": "https://developer.gocardless.com/v2/errors"
-}
-```
-
-## Enveloping
-Where you have limited access to http headers you can envelope the request.
-A JSONP request is automatically enveloped.
-
-To envelope a request set the param `?envelope_response=true`
-
-Example:
-```
-{
-  "status_code": "200",
-  "headers": {
-    "X-RateLimit-Limit": "5000",
-    "X-RateLimit-Remaining": "4966",
-    "X-RateLimit-Reset": "Thu, 01 Dec 1994 16:00:00 GMT"
-  },
-  "body": {
-    // the data
-  }
-}
-```
-
-## JSONP
-All endpoints should support JSONP and response enveloping.
-
-You can send a ?callback parameter to any GET call to have the results wrapped in a JSON function. The response includes the same data output as the regular API, plus the relevant HTTP Header information.
-
-To create a JSONP response set the param `?callback=callbackFunction`
-
-Example:
-```
-// curl https://api.gocardless.com?callback=foo
-/**/foo({
-  "status_code": "200",
-  "headers": {
-    "X-RateLimit-Limit": "5000",
-    "X-RateLimit-Remaining": "4966",
-    "X-RateLimit-Reset": "Thu, 01 Dec 1994 16:00:00 GMT"
-  },
-  "body": {
-    // the data
-  }
-})
-```
-
-## Handling PUT/PATCH/DELETE
-If your http client or firewall doesn't support `PUT`, `PATCH` or `DELETE` you  can make a `POST` request with the header `X-HTTP-Method-Override: PATCH` or `X-HTTP-Method-Override: PUT`. The request must be a `POST`.
-
 ## Updates
 Full/partial updates using PUT
 `PUT` should replace any parameters passed and ignore fields not submitted.
@@ -419,29 +330,6 @@ PUT /items/id_123 { "meta": { "published": true } }
   }
 }
 ```
-
-Partial Updates using JSON PATCH
-A `PATCH` should follow the JSON Patch spec. This enables patching nested documents.
-Specification: http://tools.ietf.org/html/draft-ietf-appsawg-json-patch-10
-
-```
-PATCH /my/data HTTP/1.1
-Host: example.org
-Content-Length: 326
-Content-Type: application/json-patch
-If-Match: "abc123"
-
-[
-  { "op": "test", "path": "/a/b/c", "value": "foo" },
-  { "op": "remove", "path": "/a/b/c" },
-  { "op": "add", "path": "/a/b/c", "value": [ "foo", "bar" ] },
-  { "op": "replace", "path": "/a/b/c", "value": 42 },
-  { "op": "move", "from": "/a/b/c", "path": "/a/b/d" },
-  { "op": "copy", "from": "/a/b/d", "path": "/a/b/e" }
-]
-```
-
-`path`  is a JSON Pointer: http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07
 
 ## JSON encode POST, PUT & PATCH bodies
 POST, PUT & PATCH expect JSON bodies in request. `Content-Type` header is required to be set to `application/json`.
@@ -527,7 +415,7 @@ Access-Control-Allow-Credentials: false
 ```
 
 ## API SSL
-All API request must be made over SSL. Any non-secure requests will return `api_error`. No redirects are made.
+All API request must be made over SSL. Any non-secure requests will return `ssl_required`. No redirects are made.
 
 ```
 HTTP/1.1 403 Forbidden
@@ -548,11 +436,3 @@ See JSON-API: http://jsonapi.org/format/#fetching-sparse-fieldsets
 
 ## Unique request identifiers
 Set a request id header to aid debugging across services: `X-Request-Id` header.
-
-## Client generated IDs
-All create endpoints should accept a `client_id` field to be set.
-
-This serves three purposes:
-- Prevents replay attacks
-- Enables idempotent resource creation, so client-side retries can occur
-- Enables compound document creation
