@@ -16,11 +16,12 @@ This document provides guidelines and examples for GoCardless APIs, encouraging 
 ## JSON API
 All endpoints must follow the core JSON API spec: http://jsonapi.org/format/
 
-Changes:
+Changes from JSON API:
 - The primary resource must be keyed by ther resource type. The endpoint url must also match the resource type.
 - API errors currently do not follow the JSON API spec.
+- Updates should always return 200 OK with the full resource to simplify internal logic.
 
-Example:
+Example of keying the resource by type:
 
 ```
 GET /posts/1
@@ -35,38 +36,38 @@ GET /posts/1
 ```
 
 ## JSON only
-The API should only support JSON. Provide API clients to work with the response.
+The API should only support JSON.
 
-### Sources:
-http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
+Reference: http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
 
-## RESTful URLs
-
-### General guidelines for RESTful URLs
+## General guidelines
 - A URL identifies a resource.
 - URLs should include nouns, not verbs.
 - Use plural nouns only for consistency (no singular nouns).
 - Use HTTP verbs (GET, POST, PUT, DELETE) to operate on the collections and elements.
-- Never nest resources - it enforces relationships that could change, and makes clients harder to write. More info available here.
-- E.g. use `/payments?subscription_id=xyz` rather than `/subscriptions/xyz/payments`
-- Formats should be in the form of `/resource/{id}`
-- Versions should be represented as dates documented in a changelog. Version number should not be in the url.
+- Never nest resources - it enforces relationships that could change, and makes clients harder to write.
+  - Use filtering: `/payments?subscription_id=xyz` rather than `/subscriptions/xyz/payments`
+- API versions should be represented as dates documented in a changelog. Version number should not be in the url.
 - API should be behind a subdomain: `api.gocardless.com`
+
+## RESTful URLs
 
 ### Good URL examples
 - List of payments:
   - GET https://api.gocardless.com/payments
 - Filtering is a query:
-  - GET https://api.gocardless.com/payments?year=2011&sort=desc
-  - GET https://api.gocardless.com/payments?topic=economy&year=2011
+  - GET https://api.gocardless.com/payments?status=failed&sort=-created
+  - GET https://api.gocardless.com/payments?sort=created
 - A single payment:
   - GET https://api.gocardless.com/payments/1234
 - All amendments in (or belonging to) this subscription:
-  - GET https://api.gocardless.com/subscription_amendments?subscription_id=1234
+  - GET https://api.gocardless.com/subscription_amendments?subscription=1234
 - Include nested resources in a comma separated list:
   - GET https://api.gocardless.com/payments/1234?include=events
 - Include only selected fields in a comma separated list:
   - GET https://api.gocardless.com/payments/1234?fields=amount
+- Get multiple resources:
+  - GET https://api.gocardless.com/payments/1234,444,555,666
 - Action on resource:
   - POST https://api.gocardless.com/payments/1234/actions/cancel
 
@@ -81,42 +82,45 @@ http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
   - https://api.gocardless.com/subscriptions/1234/amendments
 - Filter outside of query string
   - https://api.gocardless.com/payments/desc
+- Filtering to get multiple resources
+  - https://api.gocardless.com/payments?id[]=11&id[]=22
 
 ## HTTP Verbs
-HTTP verbs, or methods, should be used in compliance with their definitions under the HTTP/1.1 standard. The action taken on the representation will be contextual to the media type being worked on and its current state. Here's an example of how HTTP verbs map to create, read, update, delete operations in a particular context:
+Here's an example of how HTTP verbs map to create, read, update, delete operations in a particular context:
 
 | HTTP METHOD   | POST           | GET          | PUT          | PATCH        | DELETE       |
 |:------------- |:-------------- |:------------ |:------------ |:------------ |:------------ |
 | CRUD OP       | CREATE         | READ         | UPDATE       | UPDATE       | DELETE       |
 | /plans        | Create new plan| List plans   | Bulk update  | Error        | Delete all plans |
-| /plans/1234   | Error          | Show Plan If exists | If exists, replace Plan; If not, error | If exists, update Plan; If not, error | Delete Plan |
+| /plans/1234   | Error          | Show Plan If exists | If exists, full/partial update Plan; If not, error | If exists, update Plan using JSON Patch format; If not, error | Delete Plan |
 
 ## Actions
 
 Avoid resource actions. Create separate resources where possible:
 
-### Bad:
-```
-POST /payments/ID/refund
-```
-
-### Good:
+#### Good:
 ```
 POST /refunds?payment=ID&amount=1000
 ```
 
-Where special actions are required, place them them under a `actions` prefix:
+#### Bad:
+```
+POST /payments/ID/refund
+```
+
+Where special actions are required, place them them under a `actions` prefix.
+Actions should always be idempotent.
+
 ```
 POST /payments/ID/actions/cancel
 ```
 
-Actions should always be idempotent.
-
 ## Responses
-No values in keys
+Don't set values in keys.
 
-### Good:
+#### Good:
 No values in keys:
+
 ```
 "tags": [
   {"id": "125", "name": "Environment"},
@@ -124,8 +128,9 @@ No values in keys:
 ]
 ```
 
-### Bad:
+#### Bad:
 Values in keys:
+
 ```
 "tags": [
   {"125": "Environment"},
@@ -139,20 +144,25 @@ Always return string ids, some languages like JavaScript don't support big ints.
 ## Error handling
 Error responses should include a message for the user, internal error type (corresponding to some specific internally determined constant, which must be represented as a string), links where developers can find more info.
 
-There must only be one top level error. If many things are wrong, these should be returned in turn. This makes internal error logic simpler. It also makes it easier for API consumers to deal with errors.
+There must only be one top level error. Errors should be returned in turn. This makes internal error logic simpler. It also makes it easier for API consumers to deal with errors.
 
 Validation and resource errors are nested in the top level error under `errors`.
-Bulk errors follow the same format as validation errors with an added fields indicating which request object caused the error.
 
 The error is nested in `error` to make it possible to add, for example, deprecation errors on successful requests.
 
 The HTTP status `code` is used as a top level error, `type` is used a sub error. Nested `errors` may have more specific `type` errors like `invalid_field`.
 
-## Top level error
+### Separete formatting errors from errors the integration should handle
+Formatting errors include field presence, length etc. Returned when the data you have passed is wrong.
+
+An error that should be handled in the integration could be when attempting to create a payment against a mandate and the mandate has expired. This is a edge case that needs handling in the API integraion. Do not mask these errors as validation errors. Always return these types of errors as a top level error.
+
+### Top level error
 Top level errors MUST implement `request_id`, `type`, `code`,`message`.
 `type` MUST be specific to the error.
 `message` MUST be specific.
 Top level errors MAY implement `documentation_url`, `request_url `, `id `.
+Only return `id` for server errors (5xx). The id should point to the exception you track internally.
 
 ```json
 {
@@ -168,7 +178,7 @@ Top level errors MAY implement `documentation_url`, `request_url `, `id `.
 }
 ```
 
-## Nested errors
+### Nested errors
 Nested errors MUST implement `type`,`message`.
 `type` MUST be specific to the error.
 Nested errors MAY implement `field`.
@@ -193,6 +203,7 @@ Nested errors MAY implement `field`.
 - 400 Bad Request - Eg. invalid JSON.
 - 401 Unauthorized - No valid API key provided.
 - 402 Request Failed - Parameters were valid but request failed.
+- 403 Forbidden - Missing or invalid permissions.
 - 422 Validation Failed - Parameters were invalid.
 - 404 Not Found - The requested item doesn't exist.
 - 500, 502, 503, 504 Server errors - something went wrong on GoCardless end.
@@ -225,13 +236,20 @@ Maintain old API versions for at least 6 months.
 
 ### Implementation guidelines
 
-When possible API versions should be tied to a set of API keys or the account in use.
-API keys should maintain a last used date and the API version. Automated reminders should be set up to remind users to update their API version.
+API versions should be tied to a set of API keys. API keys should maintain a last used date and the API version. Automated reminders should be set up to remind users to update their API version.
+
+To upgrade a new API key can be issued with the new version set.
+
+### Version header
+
+To allow clients to be written for specific versions a header must also be sent. This header version must be compatible with the API key version. Error will be returned for a version mismatch.
 
 ## Pagination
 
 All list/index endpoints must be paginated by default.
 Pagination must be reverse chronological. To enable cursor based pagination, ids should be increasing.
+
+Only support cursor or time based pagination.
 
 Defaults:
 `limit=50`
@@ -267,14 +285,6 @@ Paginated results are always enveloped:
 }
 ```
 
-## Schema
-All API access is over HTTPS, and accessed from the api.gocardless.com domain. All data is sent and received as JSON.
-
-## Validation
-Only implement validation if it is strictly necessary. For example to support a multi-stage form where each step must be validated before being created.
-
-To implement validation, resources create endpoint should accept a `dry_run` parameter. A successful validation should return a `200 OK`.
-
 ## Updates
 Full/partial updates using PUT
 `PUT` should replace any parameters passed and ignore fields not submitted.
@@ -302,6 +312,11 @@ PUT /items/id_123 { "meta": { "published": true } }
 }
 ```
 
+### PATCH Updates
+
+PATCH is reserved for JSON Patch operations.
+JSON API: http://jsonapi.org/format/#patch
+
 ## JSON encode POST, PUT & PATCH bodies
 POST, PUT & PATCH expect JSON bodies in request. `Content-Type` header is required to be set to `application/json`.
 For unsupported media types a 415 Unsupported Media Type response code is returned.
@@ -320,8 +335,7 @@ The following headers must be declared in Vary:
 Any one of these headers can change the representation of the data and should invalidate a cached version. Users might be using different accounts to do admin, all with different privileges and resource visibility.
 Accept can alter the returned representation.
 
-Sources:
-https://www.mnot.net/cache_docs/
+Reference: https://www.mnot.net/cache_docs/
 
 ## Compression
 All responses should support gzip.
@@ -366,7 +380,7 @@ Exceeding rate limit:
 ## CORS
 Support Cross Origin Resource Sharing (CORS) for AJAX requests. You can read the CORS W3C working draft, or this intro from the HTML 5 Security Guide.
 
-Any domain that is registered against the requesting account  is accepted.
+Any domain that is registered against the requesting account is accepted.
 
 ```
 $ curl -i https://api.gocardless.com -H "Origin: http://dvla.com"
@@ -385,8 +399,9 @@ Access-Control-Max-Age: 86400
 Access-Control-Allow-Credentials: false
 ```
 
-## API SSL
+## TLS/SSL
 All API request must be made over SSL. Any non-secure requests will return `ssl_required`. No redirects are made.
+Outgoing web hooks must be SSL.
 
 ```
 HTTP/1.1 403 Forbidden
