@@ -204,9 +204,19 @@ Nested errors MAY implement `field`.
 - 401 Unauthorized - No valid API key provided.
 - 402 Request Failed - Parameters were valid but request failed.
 - 403 Forbidden - Missing or invalid permissions.
-- 422 Validation Failed - Parameters were invalid.
+- 422 Unprocessable Entity - Parameters were invalid/validation failed.
 - 404 Not Found - The requested item doesn't exist.
 - 500, 502, 503, 504 Server errors - something went wrong on GoCardless end.
+
+#### 400 Bad request
+
+- When the request body contains malformed JSON.
+- When the JSON is valid, but the document stucture is invalid (e.g. when passing an array when you should be passing an object).
+
+#### 422 Unprocessable Entity
+
+- When model validations fail for fields (e.g. name to long).
+- When creating a resource with a related resource being in a bad state.
 
 ## What changes are considered “backwards-compatible”?
 
