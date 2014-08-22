@@ -234,6 +234,8 @@ Nested errors MAY implement `field`.
 
 The versioning scheme is designed to promote incremental improvement to the API and discourage rewrites.
 
+WebHooks/Server initated events should not contain serialised versions of resources. Instead provide an id to the resoruce that changed and let the client request it using a version.
+
 ### Format:
 
 Versions should be dated as ISO8601 (YYYY-MM-DD)
@@ -246,13 +248,22 @@ Maintain old API versions for at least 6 months.
 
 ### Implementation guidelines
 
-API versions should be tied to a set of API keys. API keys should maintain a last used date and the API version. Automated reminders should be set up to remind users to update their API version.
+The API version must be set using a custom HTTP header. API version must not be defined in the URL structure (e.g. `/v1`) this makes incremental change impossible.
 
-To upgrade a new API key can be issued with the new version set.
+#### HTTP Header
+`GoCardless-Version: 2014-05-04`
 
-### Version header
+Enforce the header on all requests.
 
-To allow clients to be written for specific versions a header must also be sent. This header version must be compatible with the API key version. Error will be returned for a version mismatch.
+Validate the version against available versions. Do not allow dates up to a version.
+
+The API changelog must only contain backwards-incompatible changes. All non-breaking changes are automatically available to old versions.
+
+Reference: https://stripe.com/docs/upgrades
+
+## X-Headers
+
+The use of `X-Custom-Header` has been deprecated, see: http://tools.ietf.org/html/rfc6648
 
 ## Pagination
 
@@ -367,14 +378,14 @@ All endpoints must be rate limited.
 You can check the returned HTTP headers of any API request to see your current rate limit status:
 
 ```
-X-Rate-Limit-Limit: 5000
-X-Rate-Limit-Remaining: 4994
-X-Rate-Limit-Reset: Thu, 01 Dec 1994 16:00:00 GMT
+Rate-Limit-Limit: 5000
+Rate-Limit-Remaining: 4994
+Rate-Limit-Reset: Thu, 01 Dec 1994 16:00:00 GMT
 Content-Type: application/json; charset=utf-8
 Connection: keep-alive
 Retry-After: Thu, 01 May 2014 16:00:00 GMT
 
-X-RateLimit-Reset uses the HTTP header date format: RFC 1123 (Thu, 01 Dec 1994 16:00:00 GMT)
+RateLimit-Reset uses the HTTP header date format: RFC 1123 (Thu, 01 Dec 1994 16:00:00 GMT)
 ```
 
 Exceeding rate limit:
@@ -396,15 +407,15 @@ Any domain that is registered against the requesting account is accepted.
 $ curl -i https://api.gocardless.com -H "Origin: http://dvla.com"
 HTTP/1.1 302 Found
 Access-Control-Allow-Origin: *
-Access-Control-Expose-Headers: ETag, Link, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes
+Access-Control-Expose-Headers: ETag, Link, RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, OAuth-Scopes, Accepted-OAuth-Scopes
 Access-Control-Allow-Credentials: false
 
 // CORS Preflight request
 // OPTIONS 200
 Access-Control-Allow-Origin: *
-Access-Control-Allow-Headers: Authorization, Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, X-Requested-With
+Access-Control-Allow-Headers: Authorization, Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Requested-With
 Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE
-Access-Control-Expose-Headers: ETag, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+Access-Control-Expose-Headers: ETag, RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset
 Access-Control-Max-Age: 86400
 Access-Control-Allow-Credentials: false
 ```
@@ -431,4 +442,4 @@ See JSON-API: http://jsonapi.org/format/#fetching-includes
 See JSON-API: http://jsonapi.org/format/#fetching-sparse-fieldsets
 
 ## Unique request identifiers
-Set a request id header to aid debugging across services: `X-Request-Id` header.
+Set a request id header to aid debugging across services: `Request-Id` header.
