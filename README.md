@@ -234,7 +234,7 @@ Nested errors MAY implement `field`.
 
 The versioning scheme is designed to promote incremental improvement to the API and discourage rewrites.
 
-WebHooks/Server initated events should not contain serialised versions of resources. Instead provide an id to the resoruce that changed and let the client request it using a version.
+WebHooks/Server initated events should not contain serialised versions of resources. Instead provide an id to the resource that changed and let the client request it using a version.
 
 ### Format:
 
