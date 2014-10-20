@@ -17,7 +17,7 @@ This document provides guidelines and examples for GoCardless APIs, encouraging 
 All endpoints must follow the core JSON API spec: http://jsonapi.org/format/
 
 Changes from JSON API:
-- The primary resource must be keyed by ther resource type. The endpoint url must also match the resource type.
+- The primary resource must be keyed by their resource type. The endpoint url must also match the resource type.
 - API errors currently do not follow the JSON API spec.
 - Updates should always return 200 OK with the full resource to simplify internal logic.
 
@@ -152,10 +152,10 @@ The error is nested in `error` to make it possible to add, for example, deprecat
 
 The HTTP status `code` is used as a top level error, `type` is used a sub error. Nested `errors` may have more specific `type` errors like `invalid_field`.
 
-### Separete formatting errors from errors the integration should handle
+### Separate formatting errors from errors the integration should handle
 Formatting errors include field presence, length etc. Returned when the data you have passed is wrong.
 
-An error that should be handled in the integration could be when attempting to create a payment against a mandate and the mandate has expired. This is a edge case that needs handling in the API integraion. Do not mask these errors as validation errors. Always return these types of errors as a top level error.
+An error that should be handled in the integration could be when attempting to create a payment against a mandate and the mandate has expired. This is a edge case that needs handling in the API integration. Do not mask these errors as validation errors. Always return these types of errors as a top level error.
 
 ### Top level error
 Top level errors MUST implement `request_id`, `type`, `code`,`message`.
@@ -211,7 +211,7 @@ Nested errors MAY implement `field`.
 #### 400 Bad request
 
 - When the request body contains malformed JSON.
-- When the JSON is valid, but the document stucture is invalid (e.g. when passing an array when you should be passing an object).
+- When the JSON is valid, but the document structure is invalid (e.g. when passing an array when you should be passing an object).
 
 #### 422 Unprocessable Entity
 
@@ -234,7 +234,7 @@ Nested errors MAY implement `field`.
 
 The versioning scheme is designed to promote incremental improvement to the API and discourage rewrites.
 
-WebHooks/Server initated events should not contain serialised versions of resources. Instead provide an id to the resource that changed and let the client request it using a version.
+WebHooks/Server initiated events should not contain serialised versions of resources. Instead provide an id to the resource that changed and let the client request it using a version.
 
 ### Format:
 
