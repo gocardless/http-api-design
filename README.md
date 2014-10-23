@@ -46,7 +46,7 @@ Reference: http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
 - Use plural nouns only for consistency (no singular nouns).
 - Use HTTP verbs (GET, POST, PUT, DELETE) to operate on the collections and elements.
 - Never nest resources - it enforces relationships that could change, and makes clients harder to write.
-  - Use filtering: `/payments?subscription_id=xyz` rather than `/subscriptions/xyz/payments`
+  - Use filtering: `/payments?subscription=xyz` rather than `/subscriptions/xyz/payments`
 - API versions should be represented as dates documented in a changelog. Version number should not be in the url.
 - API should be behind a subdomain: `api.gocardless.com`
 
@@ -158,11 +158,13 @@ Formatting errors include field presence, length etc. Returned when the data you
 An error that should be handled in the integration could be when attempting to create a payment against a mandate and the mandate has expired. This is a edge case that needs handling in the API integration. Do not mask these errors as validation errors. Always return these types of errors as a top level error.
 
 ### Top level error
-Top level errors MUST implement `request_id`, `type`, `code`,`message`.
-`type` MUST be specific to the error.
-`message` MUST be specific.
-Top level errors MAY implement `documentation_url`, `request_url `, `id `.
-Only return `id` for server errors (5xx). The id should point to the exception you track internally.
+
+- Top level errors MUST implement `request_id`, `type`, `reason`, `code`,`message`.
+- `type` MUST relate to the `reason`, use it to categorise the error, e.g. `api_error`.
+- `reason` MUST be specific to the error.
+- `message` MUST be specific.
+- Top level errors MAY implement `documentation_url`, `request_url `, `id `.
+- Only return `id` for server errors (5xx). The id should point to the exception you track internally.
 
 ```json
 {
@@ -179,9 +181,10 @@ Only return `id` for server errors (5xx). The id should point to the exception y
 ```
 
 ### Nested errors
-Nested errors MUST implement `type`,`message`.
-`type` MUST be specific to the error.
-Nested errors MAY implement `field`.
+
+- Nested errors MUST implement `reason`, `message`.
+- `reason` MUST be specific to the error.
+- Nested errors MAY implement `field`.
 
 ```json
 {
@@ -190,7 +193,7 @@ Nested errors MAY implement `field`.
 
     "errors": [{
       "field": "account_number",
-      "type": "missing_field",
+      "reason": "missing_field",
       "message": "Account number is required"
     }]
   }
@@ -264,6 +267,21 @@ Reference: https://stripe.com/docs/upgrades
 ## X-Headers
 
 The use of `X-Custom-Header` has been deprecated, see: http://tools.ietf.org/html/rfc6648
+
+## Resource filtering
+Resource filters should always be in singular form.
+
+Multiple ids supplied to one filter, as a comma separated list, should be translated into an `OR` query. Chaining multiple filters with `&` should be translated into an `AND` query.
+
+#### Good:
+```
+GET /refunds?payment=ID1,ID2&customer=ID1
+```
+
+#### Bad:
+```
+GET /refunds?payments=ID1,ID2&customer=ID1
+```
 
 ## Pagination
 
