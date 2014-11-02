@@ -171,7 +171,7 @@ An error that should be handled in the integration could be when attempting to c
   "error": {
     "documentation_url": "https://api.gocardless.com/docs/beta/errors#access_forbidden",
     "request_url": "https://api.gocardless.com/requests/REQUEST_ID",
-    "request_id": "REQUES_ID",
+    "request_id": "REQUEST_ID",
     "id": "ERROR_ID",
     "type": "access_forbidden",
     "code": 403,
