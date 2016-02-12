@@ -109,7 +109,7 @@ POST /refunds?payment=ID&amount=1000
 POST /payments/ID/refund
 ```
 
-Where special actions are required, place them them under an `actions` prefix.
+Where special actions are required, place them under an `actions` prefix.
 Actions should always be idempotent.
 
 ```http
