@@ -166,9 +166,8 @@ handle. Do not mask these errors as validation errors. Return them as a top leve
 
 ### Top level error
 
-- Top level errors MUST implement `request_id`, `type`, `reason`, `code` and `message`.
+- Top level errors MUST implement `request_id`, `type`, `code` and `message`.
 - `type` MUST relate to the `reason`. For example, use it to categorise the error: `reason: api_error`.
-- `reason` MUST be specific to the error.
 - `message` MUST be specific.
 - Top level errors MAY implement `documentation_url`, `request_url` and `id`.
 - Only return `id` for server errors (5xx). The `id` should point to the exception you track internally.
