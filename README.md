@@ -57,8 +57,8 @@ Reference: http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
 - List of payments:
   - `GET https://api.gocardless.com/payments`
 - Filtering is a query:
-  - `GET https://api.gocardless.com/payments?status=failed&sort=-created`
-  - `GET https://api.gocardless.com/payments?sort=created`
+  - `GET https://api.gocardless.com/payments?status=failed&sort_field=-created`
+  - `GET https://api.gocardless.com/payments?sort_field=created`
 - A single payment:
   - `GET https://api.gocardless.com/payments/1234`
 - All amendments in (or belonging to) this subscription:
