@@ -1,9 +1,11 @@
 # HTTP API Design Standards
 
 ## Guidelines
+
 This document provides guidelines and examples for GoCardless APIs, encouraging consistency, maintainability, and best practices.
 
 ### Sources:
+
 - https://github.com/interagent/http-api-design
 - https://www.gov.uk/service-manual/making-software/apis.html
 - http://www.mnot.net/blog/
@@ -14,9 +16,11 @@ This document provides guidelines and examples for GoCardless APIs, encouraging 
 - https://groups.google.com/forum/#!forum/api-craft
 
 ## JSON API
+
 All endpoints must follow the core [JSON API spec](http://jsonapi.org/format/)
 
 Changes from JSON API:
+
 - The primary resource must be keyed by its resource type. The endpoint URL must also match the resource type.
 - API errors do not currently follow the JSON API spec.
 - Updates should always return `200 OK` with the full resource to simplify internal logic.
@@ -35,12 +39,29 @@ GET /posts/1
 }
 ```
 
+All action calls to an endpoint must be wrapped in a `data` envelope.
+This is because actions are carried out on a resource but use a different data type than the core resource itself.
+
+Example of a action call:
+
+```json
+POST /posts/action/share
+
+{
+  "data": {
+    "recipientID": "U123"
+  }
+}
+```
+
 ## JSON only
+
 The API should only support JSON.
 
 Reference: http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
 
 ## General guidelines
+
 - A URL identifies a resource.
 - URLs should include nouns, not verbs.
 - For consistency, only use plural nouns (e.g. "posts" instead of "post").
@@ -54,6 +75,7 @@ Reference: http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
 ## RESTful URLs
 
 ### Good URL examples
+
 - List of payments:
   - `GET https://api.gocardless.com/payments`
 - Filtering is a query:
@@ -73,6 +95,7 @@ Reference: http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
   - `POST https://api.gocardless.com/payments/1234/actions/cancel`
 
 ### Bad URL examples
+
 - Singular nouns:
   - `GET https://api.gocardless.com/payment`
   - `GET https://api.gocardless.com/payment/123`
@@ -87,24 +110,27 @@ Reference: http://www.mnot.net/blog/2012/04/13/json_or_xml_just_decide
   - `GET https://api.gocardless.com/payments?id[]=11&id[]=22`
 
 ## HTTP verbs
+
 Here's an example of how HTTP verbs map to create, read, update, delete operations in a particular context:
 
-| HTTP METHOD   | POST           | GET          | PUT          | PATCH        | DELETE       |
-|:------------- |:-------------- |:------------ |:------------ |:------------ |:------------ |
-| CRUD OP       | CREATE         | READ         | UPDATE       | UPDATE       | DELETE       |
-| /plans        | Create new plan| List plans   | Bulk update  | Error        | Delete all plans |
-| /plans/1234   | Error          | Show Plan If exists | If exists, full/partial update Plan; If not, error | If exists, update Plan using JSON Patch format; If not, error | Delete Plan |
+| HTTP METHOD | POST            | GET                 | PUT                                                | PATCH                                                         | DELETE           |
+| :---------- | :-------------- | :------------------ | :------------------------------------------------- | :------------------------------------------------------------ | :--------------- |
+| CRUD OP     | CREATE          | READ                | UPDATE                                             | UPDATE                                                        | DELETE           |
+| /plans      | Create new plan | List plans          | Bulk update                                        | Error                                                         | Delete all plans |
+| /plans/1234 | Error           | Show Plan If exists | If exists, full/partial update Plan; If not, error | If exists, update Plan using JSON Patch format; If not, error | Delete Plan      |
 
 ## Actions
 
 Avoid resource actions. Create separate resources where possible.
 
 #### Good
+
 ```http
 POST /refunds?payment=ID&amount=1000
 ```
 
 #### Bad
+
 ```http
 POST /payments/ID/refund
 ```
@@ -117,6 +143,7 @@ POST /payments/ID/actions/cancel
 ```
 
 ## Responses
+
 Don’t set values in keys.
 
 #### Good
@@ -138,9 +165,11 @@ Don’t set values in keys.
 ```
 
 ## String IDs
+
 Always return string ids. Some languages, like JavaScript, don't support big ints. Serialize/deserialize ints to strings if storing ids as ints.
 
 ## Error handling
+
 Error responses should include a message for the user, an internal error type (corresponding to some
 specific internally determined constant represented as a string), and links to info for developers.
 
@@ -155,6 +184,7 @@ The HTTP status `code` is used as a top level error, `type` is used as a sub err
 `errors` may have more specific `type` errors, such as `invalid_field`.
 
 ### Formating errors vs integration errors
+
 Formatting errors should be separate from errors handled by the integration.
 
 Formatting errors include things like field presence and length, and are returned when incorrect
@@ -197,11 +227,13 @@ handle. Do not mask these errors as validation errors. Return them as a top leve
   "error": {
     "top level errors": "...",
 
-    "errors": [{
-      "field": "account_number",
-      "reason": "missing_field",
-      "message": "Account number is required"
-    }]
+    "errors": [
+      {
+        "field": "account_number",
+        "reason": "missing_field",
+        "message": "Account number is required"
+      }
+    ]
   }
 }
 ```
@@ -234,7 +266,7 @@ handle. Do not mask these errors as validation errors. Return them as a top leve
 - Adding new properties to existing API responses.
 - Changing the order of properties in existing API responses.
 - Changing the length or format of object IDs or other opaque strings.
-  - This includes adding or removing fixed prefixes (such as ch_ on charge IDs).
+  - This includes adding or removing fixed prefixes (such as ch\_ on charge IDs).
   - You can safely assume object IDs we generate will never exceed 128 characters, but you should be
     able to handle IDs of up to that length. If for example you’re using MySQL, you should store IDs
     in a VARCHAR(128) COLLATE utf8_bin column (the COLLATE configuration ensures case-sensitivity in
@@ -251,6 +283,7 @@ changed, provide its id instead and let the client request it using a version.
 ### Format
 
 Versions should be dated as ISO8601 (YYYY-MM-DD)
+
 - Good: 2014-05-04
 - Bad: v-1.1, v1.2, 1.3, v1, v2
 
@@ -280,6 +313,7 @@ Reference: https://stripe.com/docs/upgrades
 The use of `X-Custom-Header` has [been deprecated](http://tools.ietf.org/html/rfc6648).
 
 ## Resource filtering
+
 Resource filters MUST be in singular form.
 
 Multiple ids should be supplied to a filter as a comma separated list, and should be translated into an `OR` query. Chaining multiple filters with `&` should be translated into an `AND` query.
@@ -314,11 +348,11 @@ Only support cursor or time based pagination.
 
 Parameters:
 
-| Name        | Type           | Description  |
-| ------------- |:-------------:| -----:|
-| `after`     | string | id to start after |
-| `before`      | string      |   id to start before |
-| `limit` | string      |   number of records |
+| Name     |  Type  |        Description |
+| -------- | :----: | -----------------: |
+| `after`  | string |  id to start after |
+| `before` | string | id to start before |
+| `limit`  | string |  number of records |
 
 ### Response
 
@@ -341,6 +375,7 @@ Paginated results are always enveloped:
 ```
 
 ## Updates
+
 Full or partial updates using `PUT` should replace any parameters passed and ignore fields not submitted.
 
 ```
@@ -386,6 +421,7 @@ response does _not_ count against your rate limit, so we encourage you to use it
 `Last-Modified: updated_at`
 
 #### Vary header
+
 The following header values must be declared in the Vary header: `Accept`, `Authorization` and `Cookie`.
 
 Any of these headers can change the representation of the data and should invalidate a cached
@@ -395,20 +431,25 @@ privileges and resource visibility.
 Reference: https://www.mnot.net/cache_docs/
 
 ## Compression
+
 All responses should support gzip.
 
 ## Result filtering, sorting & searching
+
 See JSON-API: http://jsonapi.org/format/#fetching-filtering
 
 ## Pretty printed responses
+
 JSON responses should be pretty printed.
 
 ## Time zone/dates
+
 Explicitly provide an ISO8601 timestamp with timezone information (DateTime in UTC).
 Use the exact timestamp for API calls that allow a timestamp to be specified.
 These timestamps look something like `2014-02-27T15:05:06+01:00`. ISO 8601 UTC format: YYYY-MM-DDTHH:MM:SSZ.
 
 ## HTTP rate limiting
+
 All endpoints must be rate limited. The current rate limit status is returned in the HTTP headers of
 all API requests.
 
@@ -424,6 +465,7 @@ RateLimit-Reset uses the HTTP header date format: RFC 1123 (Thu, 01 Dec 1994 16:
 ```
 
 Exceeding rate limit:
+
 ```http
 // 429 Too Many Requests
 {
@@ -434,9 +476,11 @@ Exceeding rate limit:
 ```
 
 ## CORS
+
 Support Cross Origin Resource Sharing (CORS) for AJAX requests.
 
 Resources:
+
 - [CORS W3C working draft](https://www.w3.org/TR/cors/)
 - [HTML5 Rocks](http://www.html5rocks.com/en/tutorials/cors/)
 
@@ -460,6 +504,7 @@ Access-Control-Allow-Credentials: false
 ```
 
 ## TLS/SSL
+
 All API request MUST be made over SSL, including outgoing web hooks. Any non-secure requests
 return `ssl_required`, and no redirects are performed.
 
@@ -475,10 +520,13 @@ Content-Length: 35
 ```
 
 ## Include related resource representations
+
 See JSON-API: http://jsonapi.org/format/#fetching-includes
 
 ## Limit fields in response
+
 See JSON-API: http://jsonapi.org/format/#fetching-sparse-fieldsets
 
 ## Unique request identifiers
+
 Set a `Request-Id` header to aid debugging across services.
